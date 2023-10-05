@@ -1,0 +1,277 @@
+//=========================================================================================
+
+1. 언리얼 엔진 설치, 프그래밍 환경 구축
+2. 클래스 추가
+3. C++ 클래스 상속 및 오버라이딩 구현
+4. 문자열 처리 이해
+5. 게임인스턴스 클래스 적용과 카테고리를 활용한 로그 확인
+
+//=========================================================================================
+
+- 프로그래밍을 시작 전 언리얼 C++ 코딩 표준 이해
+- 주의할 점 확인하기
+
+언리얼 코딩 표준
+1. public 에서 private 로 이어지는 클래스 체계(Organization)을 준수.
+
+2. 명명 규칙
+	1. 파스칼 케이싱(Pascal Casing)을 사용
+	2. 소문자를 가급적 사용하지 않고 공백 및 언더스코어(_)가 없음
+	3. 모든 클래스와 구조체에는 고유한 접두사가 있다
+
+3. 코드의 명확성
+	1. 파라미터에 가급적 In과 Out 접두사를 사용해 명시
+	2. const 지시자(directive)의 적극적 활용
+	3. 레퍼런스(Reference)를 통한 복사 방지
+	4. auto 키워드는 가급적 자제하기
+
+4. Find In Files의 활용
+
+5. 헤더파일 및 #include 구문은 의존성을 최소화시켜 주의 깊게 다룰 것
+
+//=========================================================================================
+
+언리얼 C++ 기본 타입과 문자열 
+(Unreal C++ primitive types and string)
+
+- 언리얼 환경에서 알아두어야 할 기본 타입과 고려할 점
+- 캐릭터 인코딩 시스템에 대한 이해
+- 언리얼 C++이 제공하는 다양한 문자열 처리 방법과 내부 구성의 이해
+
+#언리얼 C++ 기본 타입
+- 최신 규약에서 int는 최소 32비트를 보장하도록 규정
+(특정 플랫폼에서는 64bit로 해석될 수 있다)
+
+- 게임 제작 특징 
+1. 데이터 정보가 명확해야 한다.
+2. 단일 컴퓨터에서 최대 퍼포먼스를 뽑아내야 한다.
+3. 네트웍 상에서 데이터 통신이 효율적이고 안정적이어야 한다.
+
+//=========================================================================================
+
+bool 타입 선언 
+ - 데이터 전송을 고려한 참 / 거짓 데이터의 지정
+ - bool은 크기가 명확하지 않음
+ - 헤더에는 가급적 bool 대신 uint8 타입을 사용하되 Bit Field 오퍼레이터를 사용
+ - 일반 uint8과의 구분을 위해 b접두사 사용
+ - Cpp 로직에서는 자유롭게 bool 을 사용
+
+//=========================================================================================
+
+TCHAR & FString
+
+복잡한 문자열 처리를 하나로
+- 유니코드를 사용해 문자열 처리를 통일
+	. 이 중에서 2byte로 사이즈가 균일한 UTF-16 을 사용
+ 	. 유니코드를 위한 언리얼 표준 캐릭터 타입 : TCHAR
+
+- 문자열은 언제나 TEXT 매크로를 사용해 지정 
+	. TEXT매크로로 감싼 문자열은 TCHAR 배열로 지정된다.
+
+- 문자열을 다루는 클래스로 FString을 제공함
+	. FString은 TCHAR배열을 포함하는 헬퍼 클래스
+
+FString의 구조와 활용
+- 다른 타입에서 FString으로 변환
+	. FString::Printf
+	. FString::SanitizeFloat
+	. FString::FromInt
+
+- C런타임 수준에서 문자열을 처리하는 클래스 FCString
+	. EX) 문자열을 찾는 strstr을 사용
+
+- FString에서 다른 타입으로의 변환 (안전하진 않으므로 주의)
+	. FCString::Atoi
+	. FCString::Atof
+
+
+void UMyGameInstance::Init()
+{
+	Super::Init();
+
+	TCHAR LogCharArray[] = TEXT("Hello Unreal");
+	UE_LOG(LogTemp, Log, LogCharArray);
+
+	FString LogCharString = LogCharArray;
+	UE_LOG(LogTemp, Log, TEXT("%s"), *LogCharString);
+
+	const TCHAR* LongCharPtr = *LogCharString;
+	TCHAR* LogCharPtr = LogCharString.GetCharArray().GetData();
+
+	TCHAR LogCharArrayWithSize[100];
+	FCString::Strcpy(LogCharArrayWithSize, LogCharString.Len(), *LogCharString);
+
+	if (LogCharString.Contains(TEXT("unreal"), ESearchCase::IgnoreCase))
+	{
+		int32 Index = LogCharString.Find(TEXT("unreal"), ESearchCase::IgnoreCase);
+		FString EndString = LogCharString.Mid(Index);
+		UE_LOG(LogTemp, Log, TEXT("Find Test: %s"), *EndString);
+	}
+
+	FString Left, Right;
+	if (LogCharString.Split(TEXT(" "), &Left, &Right))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Split Test: %s 와 %s"), *Left, *Right);
+	}
+
+	int32 IntValue = 32;
+	float FloatValue = 3.14;
+
+	FString FloatIntString = FString::Printf(TEXT("Int:%d, Float:%f"), IntValue, FloatValue);
+	FString FloatString = FString::SanitizeFloat(FloatValue);
+	FString IntString = FString::FromInt(IntValue);
+
+	UE_LOG(LogTemp, Log, TEXT("%s"), *FloatIntString);
+	UE_LOG(LogTemp, Log, TEXT("Int:%s, Float:%s"), *IntString, *FloatString);
+
+	int32 IntValueFromString = FCString::Atoi(*IntString);
+	float FloatValueFromString = FCString::Atof(*FloatString);
+	FString FloatIntString2 = FString::Printf(TEXT("Int:%d, Float:%f"), IntValueFromString, FloatValueFromString);
+	UE_LOG(LogTemp, Log, TEXT("%s"), *FloatIntString2);
+
+}
+
+//=========================================================================================
+
+FName : 애셋 관리를 위해 사용되는 문자열 체계
+. 대소문자 구분 없음
+. 한번 선언되면 바꿀 수 없음.
+. 가볍고 빠름.
+. 문자를 표현하는 용도가 아닌 애셋 키를 지정하는 용돌로 사용, 빌드시 해시값으로 변환
+
+FText : 다국어 지원을 위한 문자열 관리 체계
+. 일종의 키로 작용
+. 별도의 문자열 테이블 정보가 추가롤 요구됨.
+. 게임 빌드 시 자동으로 다양한 국가별 언어로 변환됨.
+
+FName의 구조와 활용
+언리얼은 FName과 관련된 글로벌 Pool자료구조를 가지고 있다.
+-FName과 글로벌 Pool
+. 문자열이 들어오면 해시 값을 추춯해 키를 생성해 FName에서 보관
+. FName 값에 저장된 값을 사용해 전역 Pool에서 원하는 자료를 검색해 반환
+. 문자 정보는 대소문자를 구분하지 않고 저장함. (Ignore Case)
+
+-FName의 형성
+. 생성자에 문자열 정보를 넣으면 풀을 조사해 적당한 키로 변환하는 작업이 수반된다
+. Find or Add
+
+
+	FName Key1(TEXT("PELVIS"));
+	FName Key2(TEXT("pelvis"));
+	UE_LOG(LogTemp, Log, TEXT("FName 비교 결과 : %s"), Key1 == Key2 ? TEXT("같음") : TEXT("다름"));
+
+	for (int i = 0; i < 10000; ++i)
+	{
+		FName SearchInNamePool = FName(TEXT("pelvis"));
+		const static FName StaticOnlyOnce(TEXT("pelvis"));
+	}
+
+
+언리얼 C++기본 타입과 문자열 처리
+	1. 언리얼이 C++타입 int를 사용하지 않는 이유
+	2. 다양한 캐릭터 인코딩 시스템 이해
+	3. 언리얼의 문자열 처리 이해
+	4. FString 구조와 사용법
+	5. FName 구조와 사용법
+
+//=========================================================================================
+
+언리얼 오브젝트 소개(Unreal Object introduction)
+
+*목표*
+. 게임 프로그래밍이 가지는 특수성과 언리얼 오브젝트의 필요성 이해
+. 언리얼 오브젝트의 선언과 엔진 내부 컴파일 과정 학습
+
+언리얼 엔진이 설계한 새로운 시스템의 단위 오브젝트(객체)
+ . 기존 C++ 오브젝트에 모던 객체 지향 설계를 위한 다양한 기능을 추가한 오브젝트
+ . 일반 C++ 오브젝트와 언리얼 오브젝트의 두 객체를 모두 사용 가능
+ . 구분을 위해 일반 C++ 오브젝트는 F, 언리얼 오브젝트는 접두사 U를 사용
+
+각 오브젝트의 사용 용도
+ . C++ 오브젝트 : 저수준의 빠른 처리를 위한 기능 구현에 사용
+ . 언리얼 오브젝트 : 콘텐츠 제작에 관련된 복잡한 설계 구현에 사용
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
