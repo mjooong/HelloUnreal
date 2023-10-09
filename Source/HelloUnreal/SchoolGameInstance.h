@@ -23,6 +23,9 @@ public:
 private:
 
 	UPROPERTY()
+	TObjectPtr<class UCourseInfo> CourseInfo;
+
+	UPROPERTY()
 	FString SchoolName;
 
 	

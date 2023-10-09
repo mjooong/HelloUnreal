@@ -6,10 +6,11 @@
 #include "ITeacher.h"
 #include "IStaff.h"
 #include "Card.h"
+#include "CourseInfo.h"
 
 USchoolGameInstance::USchoolGameInstance()
 {
-	SchoolName = TEXT("기본학교");
+	SchoolName = TEXT("학교");
 
 }
 
@@ -88,7 +89,7 @@ void USchoolGameInstance::Init()
 	UE_LOG(LogTemp, Log, TEXT("=============================="));*/
 
 	/**Composition*/
-	UE_LOG(LogTemp, Log, TEXT("============================"));
+	/*UE_LOG(LogTemp, Log, TEXT("============================"));
 	TArray<UIPerson*> Persons = { NewObject<UIStudent>(), NewObject<UITeacher>(), NewObject<UIStaff>() };
 	for (const auto Person : Persons)
 	{
@@ -104,8 +105,27 @@ void USchoolGameInstance::Init()
 			UE_LOG(LogTemp, Log, TEXT("%s님이 소유한 카드 종류 %s"), *Person->GetName(), *CardMetaData);
 
 		}
-	}
+	}*/
+	//UE_LOG(LogTemp, Log, TEXT("============================"));
+
+	/** Delegate*/
+	CourseInfo = NewObject<UCourseInfo>(this);
+	UE_LOG(LogTemp, Log, TEXT("============================"));
+
+	UIStudent* Student1 = NewObject<UIStudent>();
+	Student1->SetName(TEXT("학생1"));
+	UIStudent* Student2 = NewObject<UIStudent>();
+	Student2->SetName(TEXT("학생2"));
+	UIStudent* Student3 = NewObject<UIStudent>();
+	Student3->SetName(TEXT("학생3"));
+
+	CourseInfo->OnChanged.AddUObject(Student1, &UIStudent::GetNotification);
+	CourseInfo->OnChanged.AddUObject(Student2, &UIStudent::GetNotification);
+	CourseInfo->OnChanged.AddUObject(Student3, &UIStudent::GetNotification);
+
+	CourseInfo->ChangeCourseInfo(SchoolName, TEXT("변경되 학사 정보"));
 
 	UE_LOG(LogTemp, Log, TEXT("============================"));
+
 
 }
